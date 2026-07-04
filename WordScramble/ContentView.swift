@@ -11,6 +11,7 @@ struct ContentView: View {
     @State private var usedWords = [String]()
     @State private var rootWord = ""
     @State private var newWord = ""
+    @State private var score = 0
     
     @State private var errorTitle = ""
     @State private var errorMessage = ""
@@ -28,6 +29,12 @@ struct ContentView: View {
         }
         
         fatalError("Could not load start.txt from bundle.")
+    }
+    
+    func resetGame() {
+        usedWords = []
+        score = 0
+        startGame()
     }
     
     func addNewWord() {
@@ -50,15 +57,22 @@ struct ContentView: View {
             return
         }
         
+        guard isLongEnough(word: answer) else {
+            wordError(title: "Word too short", message: "Word must be at least 3 letters long")
+            return
+        }
+        
         withAnimation {
             usedWords.insert(answer, at: 0)
         }
+        
+        score += answer.count
         
         newWord = ""
     }
     
     func isOriginal(word: String) -> Bool {
-        !usedWords.contains(word)
+        !usedWords.contains(word) && word != rootWord
     }
     
     func isPossible(word: String) -> Bool {
@@ -81,6 +95,10 @@ struct ContentView: View {
         let misspelledRange = checker.rangeOfMisspelledWord(in: word, range: range, startingAt: 0, wrap: false, language: "en")
         
         return misspelledRange.location == NSNotFound
+    }
+    
+    func isLongEnough(word: String) -> Bool {
+        word.count >= 3
     }
     
     func wordError(title: String, message: String) {
@@ -107,6 +125,10 @@ struct ContentView: View {
                 }
             }
             .navigationTitle(rootWord)
+            .navigationSubtitle("Score: \(score)")
+            .toolbar {
+                Button("New Game", action: resetGame)
+            }
             .onSubmit(addNewWord)
             .onAppear(perform: startGame)
             .alert(errorTitle, isPresented: $showingError) { } message: {
